@@ -1,8 +1,5 @@
 ﻿using MediatR;
-using Microsoft.eShopOnContainers.Services.Ordering.Infrastructure.Repositories;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using Microsoft.eShopOnContainers.Services.Ordering.Infrastructure.Idempotency;
 using System.Threading.Tasks;
 
 namespace Microsoft.eShopOnContainers.Services.Ordering.API.Application.Commands
@@ -14,7 +11,7 @@ namespace Microsoft.eShopOnContainers.Services.Ordering.API.Application.Commands
     /// <typeparam name="T">Type of the command handler that performs the operation if request is not duplicated</typeparam>
     /// <typeparam name="R">Return value of the inner command handler</typeparam>
     public class IdentifierCommandHandler<T, R> : IAsyncRequestHandler<IdentifiedCommand<T, R>, R>
-        where T : IAsyncRequest<R>
+        where T : IRequest<R>
     {
         private readonly IMediator _mediator;
         private readonly IRequestManager _requestManager;
@@ -50,7 +47,9 @@ namespace Microsoft.eShopOnContainers.Services.Ordering.API.Application.Commands
             else
             {
                 await _requestManager.CreateRequestForCommandAsync<T>(message.Id);
-                var result = await _mediator.SendAsync(message.Command);
+
+                var result = await _mediator.Send(message.Command);
+                
                 return result;
             }
         }

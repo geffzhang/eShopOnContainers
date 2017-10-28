@@ -4,9 +4,10 @@ using System.Text;
 
 namespace UnitTest.Ordering.Application
 {
+    using global::Ordering.API.Application.Models;
     using MediatR;
     using Microsoft.eShopOnContainers.Services.Ordering.API.Application.Commands;
-    using Microsoft.eShopOnContainers.Services.Ordering.Infrastructure.Repositories;
+    using Microsoft.eShopOnContainers.Services.Ordering.Infrastructure.Idempotency;
     using Moq;
     using System.Collections;
     using System.Collections.Generic;
@@ -33,7 +34,7 @@ namespace UnitTest.Ordering.Application
             _requestManager.Setup(x => x.ExistAsync(It.IsAny<Guid>()))
                .Returns(Task.FromResult(false));
 
-            _mediator.Setup(x => x.SendAsync(It.IsAny<IAsyncRequest<bool>>()))
+            _mediator.Setup(x => x.Send(It.IsAny<IRequest<bool>>(),default(System.Threading.CancellationToken)))
                .Returns(Task.FromResult(true));
 
             //Act
@@ -42,7 +43,7 @@ namespace UnitTest.Ordering.Application
 
             //Assert
             Assert.True(result);
-            _mediator.Verify(x => x.SendAsync(It.IsAny<IAsyncRequest<bool>>()), Times.Once());
+            _mediator.Verify(x => x.Send(It.IsAny<IRequest<bool>>(), default(System.Threading.CancellationToken)), Times.Once());
         }
 
         [Fact]
@@ -55,7 +56,7 @@ namespace UnitTest.Ordering.Application
             _requestManager.Setup(x => x.ExistAsync(It.IsAny<Guid>()))
                .Returns(Task.FromResult(true));
 
-            _mediator.Setup(x => x.SendAsync(It.IsAny<IAsyncRequest<bool>>()))
+            _mediator.Setup(x => x.Send(It.IsAny<IRequest<bool>>(), default(System.Threading.CancellationToken)))
                .Returns(Task.FromResult(true));
 
             //Act
@@ -64,12 +65,14 @@ namespace UnitTest.Ordering.Application
 
             //Assert
             Assert.False(result);
-            _mediator.Verify(x => x.SendAsync(It.IsAny<IAsyncRequest<bool>>()), Times.Never());
+            _mediator.Verify(x => x.Send(It.IsAny<IRequest<bool>>(), default(System.Threading.CancellationToken)), Times.Never());
         }
 
         private CreateOrderCommand FakeOrderRequest(Dictionary<string, object> args = null)
         {
             return new CreateOrderCommand(
+                new List<BasketItem>(),
+                userId: args != null && args.ContainsKey("userId") ? (string)args["userId"] : null,
                 city: args != null && args.ContainsKey("city") ? (string)args["city"] : null,
                 street: args != null && args.ContainsKey("street") ? (string)args["street"] : null,
                 state: args != null && args.ContainsKey("state") ? (string)args["state"] : null,

@@ -1,13 +1,16 @@
 ﻿namespace Microsoft.eShopOnContainers.Services.Ordering.Domain.Seedwork
 {
     using System;
-
+    using MediatR;
+    using System.Collections.Generic;
 
     public abstract class Entity
     {
 
         int? _requestedHashCode;
         int _Id;
+        
+        private List<INotification> _domainEvents;
 
         public virtual  int Id 
         {
@@ -19,6 +22,19 @@
             {
                 _Id = value;
             }
+        }
+
+        public List<INotification> DomainEvents => _domainEvents;        
+        public void AddDomainEvent(INotification eventItem)
+        {
+            _domainEvents = _domainEvents ?? new List<INotification>();
+            _domainEvents.Add(eventItem);
+        }
+
+        public void RemoveDomainEvent(INotification eventItem)
+        {
+            if (_domainEvents is null) return;
+            _domainEvents.Remove(eventItem);
         }
 
         public bool IsTransient()
@@ -33,6 +49,9 @@
 
             if (Object.ReferenceEquals(this, obj))
                 return true;
+
+            if (this.GetType() != obj.GetType())
+                return false;
 
             Entity item = (Entity)obj;
 

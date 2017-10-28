@@ -3,10 +3,11 @@ using eShopOnContainers.Droid.Effects;
 using Xamarin.Forms.Platform.Android;
 using System;
 using Android.Widget;
-using eShopOnContainers.Core.Effects;
+using eShopOnContainers.Core.Behaviors;
 using System.ComponentModel;
 using System.Diagnostics;
 
+[assembly: ResolutionGroupName("eShopOnContainers")]
 [assembly: ExportEffect(typeof(EntryLineColorEffect), "EntryLineColorEffect")]
 namespace eShopOnContainers.Droid.Effects
 {
@@ -34,7 +35,7 @@ namespace eShopOnContainers.Droid.Effects
 
         protected override void OnElementPropertyChanged(PropertyChangedEventArgs args)
         {
-            if (args.PropertyName == LineColorEffect.LineColorProperty.PropertyName)
+            if (args.PropertyName == LineColorBehavior.LineColorProperty.PropertyName)
             {
                 UpdateLineColor();
             }
@@ -46,7 +47,7 @@ namespace eShopOnContainers.Droid.Effects
             {
                 if (control != null)
                 {
-                    control.Background.SetColorFilter(LineColorEffect.GetLineColor(Element).ToAndroid(), Android.Graphics.PorterDuff.Mode.SrcAtop);
+                    control.Background.SetColorFilter(LineColorBehavior.GetLineColor(Element).ToAndroid(), Android.Graphics.PorterDuff.Mode.SrcAtop);
                 }
             }
             catch (Exception ex)

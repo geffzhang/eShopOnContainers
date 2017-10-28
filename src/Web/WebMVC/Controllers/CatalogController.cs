@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.eShopOnContainers.WebMVC.ViewModels.Pagination;
 using Microsoft.eShopOnContainers.WebMVC.Services;
 using Microsoft.eShopOnContainers.WebMVC.ViewModels.CatalogViewModels;
-
 
 namespace Microsoft.eShopOnContainers.WebMVC.Controllers
 {
@@ -14,10 +11,8 @@ namespace Microsoft.eShopOnContainers.WebMVC.Controllers
     {
         private ICatalogService _catalogSvc;
 
-        public CatalogController(ICatalogService catalogSvc)
-        {
+        public CatalogController(ICatalogService catalogSvc) => 
             _catalogSvc = catalogSvc;
-        }
 
         public async Task<IActionResult> Index(int? BrandFilterApplied, int? TypesFilterApplied, int? page)
         {
@@ -35,7 +30,7 @@ namespace Microsoft.eShopOnContainers.WebMVC.Controllers
                     ActualPage = page ?? 0,
                     ItemsPerPage = catalog.Data.Count,
                     TotalItems = catalog.Count, 
-                    TotalPages = int.Parse(Math.Ceiling(((decimal)catalog.Count / itemsPage)).ToString())
+                    TotalPages = (int)Math.Ceiling(((decimal)catalog.Count / itemsPage))
                 }
             };
 
@@ -44,11 +39,5 @@ namespace Microsoft.eShopOnContainers.WebMVC.Controllers
 
             return View(vm);
         }
-
-        public IActionResult Error()
-        {
-            return View();
-        }
     }
 }
-

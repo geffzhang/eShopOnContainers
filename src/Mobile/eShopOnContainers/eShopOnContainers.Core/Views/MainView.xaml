@@ -1,12 +1,14 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <TabbedPage xmlns="http://xamarin.com/schemas/2014/forms"
             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
             x:Class="eShopOnContainers.Core.Views.MainView"
             xmlns:views="clr-namespace:eShopOnContainers.Core.Views;assembly=eShopOnContainers.Core"
+			xmlns:viewModelBase="clr-namespace:eShopOnContainers.Core.ViewModels.Base;assembly=eShopOnContainers.Core"
             xmlns:controls="clr-namespace:eShopOnContainers.Core.Controls;assembly=eShopOnContainers.Core"
             BarBackgroundColor="{StaticResource DarkGreenColor}"
             BackgroundColor="{StaticResource BackgroundColor}"
-            BarTextColor="{StaticResource WhiteColor}">
+            BarTextColor="{StaticResource WhiteColor}"
+			viewModelBase:ViewModelLocator.AutoWireViewModel="true">
     <TabbedPage.Title>
         <OnPlatform      
             x:TypeArguments="x:String"
@@ -61,4 +63,15 @@
                 WinPhone="Assets\menu_cart.png"/>
         </views:BasketView.Icon>
     </views:BasketView>
+    <!-- CAMPAIGNS -->
+    <views:CampaignView  
+        x:Name="CampaignView">
+        <views:CampaignView.Icon>
+            <OnPlatform        
+                x:TypeArguments="FileImageSource"
+                Android="menu_campaigns"
+                iOS="menu_campaigns"
+                WinPhone="Assets\menu_campaigns.png"/>
+        </views:CampaignView.Icon>
+    </views:CampaignView>
 </TabbedPage>

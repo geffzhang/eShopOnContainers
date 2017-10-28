@@ -1,5 +1,5 @@
 ﻿using eShopOnContainers.Core.Models.Navigation;
-using eShopOnContainers.ViewModels.Base;
+using eShopOnContainers.Core.ViewModels.Base;
 using System.Windows.Input;
 using Xamarin.Forms;
 using System.Threading.Tasks;
@@ -66,7 +66,7 @@ namespace eShopOnContainers.Core.ViewModels
             }
         }
 
-        public ICommand CheckoutCommand => new Command(Checkout);
+        public ICommand CheckoutCommand => new Command(async () => await CheckoutAsync());
 
         public override async Task InitializeAsync(object navigationData)
         {
@@ -79,18 +79,18 @@ namespace eShopOnContainers.Core.ViewModels
 
                 OrderItems = orderItems;
 
-                var authToken = Settings.AuthAccessToken;
+                var authToken = Settings.AuthAccessToken;       
                 var userInfo = await _userService.GetUserInfoAsync(authToken);
 
                 // Create Shipping Address
                 ShippingAddress = new Address
                 {
-                    Id = new Guid(userInfo.UserId),
+                    Id = !string.IsNullOrEmpty(userInfo?.UserId) ? new Guid(userInfo.UserId) : Guid.NewGuid(),
                     Street = userInfo?.Street,
                     ZipCode = userInfo?.ZipCode,
                     State = userInfo?.State,
                     Country = userInfo?.Country,
-                    City = string.Empty
+                    City = userInfo?.Address
                 };
 
                 // Create Payment Info
@@ -107,7 +107,7 @@ namespace eShopOnContainers.Core.ViewModels
                 {
                     BuyerId = userInfo.UserId,
                     OrderItems = CreateOrderItems(orderItems),
-                    State = OrderState.InProcess,
+                    OrderStatus = OrderStatus.Submitted,
                     OrderDate = DateTime.Now,
                     CardHolderName = paymentInfo.CardHolderName,
                     CardNumber = paymentInfo.CardNumber,
@@ -117,28 +117,47 @@ namespace eShopOnContainers.Core.ViewModels
                     ShippingState = _shippingAddress.State,
                     ShippingCountry = _shippingAddress.Country,
                     ShippingStreet = _shippingAddress.Street,
-                    ShippingCity = _shippingAddress.City,                  
+                    ShippingCity = _shippingAddress.City,  
+                    ShippingZipCode = _shippingAddress.ZipCode,
                     Total = CalculateTotal(CreateOrderItems(orderItems))
                 };
+
+                if (Settings.UseMocks)
+                {
+                    // Get number of orders
+                    var orders = await _orderService.GetOrdersAsync(authToken);
+
+                    // Create the OrderNumber
+                    Order.OrderNumber = orders.Count + 1;
+                    RaisePropertyChanged(() => Order);
+                }
 
                 IsBusy = false;
             }
         }
 
-        private async void Checkout()
+        private async Task CheckoutAsync()
         {
             try
             {
                 var authToken = Settings.AuthAccessToken;
 
-                // Create new order
-                await _orderService.CreateOrderAsync(Order, authToken);
+                var basket = _orderService.MapOrderToBasket(Order);
+                basket.RequestId = Guid.NewGuid();
+
+                // Create basket checkout
+                await _basketService.CheckoutAsync(basket, authToken);
+
+                if (Settings.UseMocks)
+                {
+                    await _orderService.CreateOrderAsync(Order, authToken);
+                }
 
                 // Clean Basket
                 await _basketService.ClearBasketAsync(_shippingAddress.Id.ToString(), authToken);
 
                 // Reset Basket badge
-                var basketViewModel = ViewModelLocator.Instance.Resolve<BasketViewModel>();
+                var basketViewModel = ViewModelLocator.Resolve<BasketViewModel>();
                 basketViewModel.BadgeCount = 0;
 
                 // Navigate to Orders

@@ -2,9 +2,8 @@
 using eShopOnContainers.Core.Models.User;
 using eShopOnContainers.Core.Services.Identity;
 using eShopOnContainers.Core.Services.OpenUrl;
-using eShopOnContainers.Core.Services.User;
 using eShopOnContainers.Core.Validations;
-using eShopOnContainers.ViewModels.Base;
+using eShopOnContainers.Core.ViewModels.Base;
 using IdentityModel.Client;
 using System;
 using System.Diagnostics;
@@ -25,16 +24,13 @@ namespace eShopOnContainers.Core.ViewModels
 
         private IOpenUrlService _openUrlService;
         private IIdentityService _identityService;
-        private IUserService _userService;
 
         public LoginViewModel(
             IOpenUrlService openUrlService,
-            IIdentityService identityService,
-            IUserService userService)
+            IIdentityService identityService)
         {
             _openUrlService = openUrlService;
             _identityService = identityService;
-            _userService = userService;
 
             _userName = new ValidatableObject<string>();
             _password = new ValidatableObject<string>();
@@ -121,15 +117,19 @@ namespace eShopOnContainers.Core.ViewModels
             }
         }
 
-        public ICommand MockSignInCommand => new Command(MockSignInAsync);
+        public ICommand MockSignInCommand => new Command(async () => await MockSignInAsync());
 
         public ICommand SignInCommand => new Command(async () => await SignInAsync());
 
         public ICommand RegisterCommand => new Command(Register);
 
-        public ICommand NavigateCommand => new Command<string>(NavigateAsync);
+        public ICommand NavigateCommand => new Command<string>(async (url) => await NavigateAsync(url));
 
-        public ICommand SettingsCommand => new Command(SettingsAsync);
+        public ICommand SettingsCommand => new Command(async () => await SettingsAsync());
+
+		public ICommand ValidateUserNameCommand => new Command(() => ValidateUserName());
+
+		public ICommand ValidatePasswordCommand => new Command(() => ValidatePassword());
 
         public override Task InitializeAsync(object navigationData)
         {
@@ -146,7 +146,7 @@ namespace eShopOnContainers.Core.ViewModels
             return base.InitializeAsync(navigationData);
         }
 
-        private async void MockSignInAsync()
+        private async Task MockSignInAsync()
         {
             IsBusy = true;
             IsValid = true;
@@ -188,7 +188,7 @@ namespace eShopOnContainers.Core.ViewModels
 
             await Task.Delay(500);
 
-            LoginUrl = _identityService.CreateAuthorizeRequest();
+            LoginUrl = _identityService.CreateAuthorizationRequest();
 
             IsValid = true;
             IsLogin = true;
@@ -203,42 +203,46 @@ namespace eShopOnContainers.Core.ViewModels
         private void Logout()
         {
             var authIdToken = Settings.AuthIdToken;
-
             var logoutRequest = _identityService.CreateLogoutRequest(authIdToken);
 
-            if(!string.IsNullOrEmpty(logoutRequest))
+            if (!string.IsNullOrEmpty(logoutRequest))
             {
                 // Logout
                 LoginUrl = logoutRequest;
             }
 
-            if(Settings.UseMocks)
+            if (Settings.UseMocks)
             {
                 Settings.AuthAccessToken = string.Empty;
-                Settings.AuthIdToken = string.Empty;
+                Settings.AuthIdToken = string.Empty; 
             }
+
+            Settings.UseFakeLocation = false;
         }
 
-        private async void NavigateAsync(string url)
+        private async Task NavigateAsync(string url)
         {
-            if (url.Equals(GlobalSetting.Instance.LogoutCallback))
+            var unescapedUrl = System.Net.WebUtility.UrlDecode(url);
+
+            if (unescapedUrl.Equals(GlobalSetting.Instance.LogoutCallback))
             {
                 Settings.AuthAccessToken = string.Empty;
                 Settings.AuthIdToken = string.Empty;
                 IsLogin = false;
-                LoginUrl = _identityService.CreateAuthorizeRequest();
+                LoginUrl = _identityService.CreateAuthorizationRequest();
             }
-            else if (url.Contains(GlobalSetting.Instance.IdentityCallback))
+            else if (unescapedUrl.Contains(GlobalSetting.Instance.IdentityCallback))
             {
                 var authResponse = new AuthorizeResponse(url);
-
-                if (!string.IsNullOrWhiteSpace(authResponse.AccessToken))
+                if (!string.IsNullOrWhiteSpace(authResponse.Code))
                 {
-                    if (authResponse.AccessToken != null)
-                    {
-                        Settings.AuthAccessToken = authResponse.AccessToken;
-                        Settings.AuthIdToken = authResponse.IdentityToken;
+                    var userToken = await _identityService.GetTokenAsync(authResponse.Code);
+                    string accessToken = userToken.AccessToken;
 
+                    if (!string.IsNullOrWhiteSpace(accessToken))
+                    {
+                        Settings.AuthAccessToken = accessToken;
+                        Settings.AuthIdToken = authResponse.IdentityToken;
                         await NavigationService.NavigateToAsync<MainViewModel>();
                         await NavigationService.RemoveLastFromBackStackAsync();
                     }
@@ -246,23 +250,33 @@ namespace eShopOnContainers.Core.ViewModels
             }
         }
 
-        private async void SettingsAsync()
+        private async Task SettingsAsync()
         {
             await NavigationService.NavigateToAsync<SettingsViewModel>();
         }
 
         private bool Validate()
         {
-            bool isValidUser = _userName.Validate();
-            bool isValidPassword = _password.Validate();
+			bool isValidUser = ValidateUserName();
+            bool isValidPassword = ValidatePassword();
 
             return isValidUser && isValidPassword;
         }
 
+		private bool ValidateUserName()
+		{
+			return _userName.Validate();
+		}
+
+		private bool ValidatePassword()
+		{
+			return _password.Validate();
+		}
+
         private void AddValidations()
         {
-            _userName.Validations.Add(new IsNotNullOrEmptyRule<string> { ValidationMessage = "Username should not be empty" });
-            _password.Validations.Add(new IsNotNullOrEmptyRule<string> { ValidationMessage = "Password should not be empty" });
+            _userName.Validations.Add(new IsNotNullOrEmptyRule<string> { ValidationMessage = "A username is required." });
+            _password.Validations.Add(new IsNotNullOrEmptyRule<string> { ValidationMessage = "A password is required." });
         }
 
         public void InvalidateMock()
