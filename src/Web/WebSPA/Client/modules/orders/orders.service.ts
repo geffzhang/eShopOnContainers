@@ -25,17 +25,17 @@ export class OrdersService {
     }
 
     getOrders(): Observable<IOrder[]> {
-        let url = this.ordersUrl + '/api/v1/o/orders';
+        let url = this.ordersUrl + '/o/api/v1/orders';
 
-        return this.service.get(url).pipe(map((response: Response) => {
+        return this.service.get(url).pipe(map((response: any) => {
             return response;
         }));
     }
 
     getOrder(id: number): Observable<IOrderDetail> {
-        let url = this.ordersUrl + '/api/v1/o/orders/' + id;
+        let url = this.ordersUrl + '/o/api/v1/orders/' + id;
 
-        return this.service.get(url).pipe(map((response: Response) => {
+        return this.service.get(url).pipe(map((response: any) => {
             return response;
         }));
     }

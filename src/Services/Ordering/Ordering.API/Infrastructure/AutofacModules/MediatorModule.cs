@@ -4,9 +4,9 @@ using Autofac;
 using FluentValidation;
 using MediatR;
 using Microsoft.eShopOnContainers.Services.Ordering.API.Application.Commands;
+using Ordering.API.Application.Behaviors;
 using Ordering.API.Application.DomainEventHandlers.OrderStartedEvent;
 using Ordering.API.Application.Validations;
-using Ordering.API.Infrastructure.Behaviors;
 
 namespace Microsoft.eShopOnContainers.Services.Ordering.API.Infrastructure.AutofacModules
 {
@@ -40,6 +40,8 @@ namespace Microsoft.eShopOnContainers.Services.Ordering.API.Infrastructure.Autof
 
             builder.RegisterGeneric(typeof(LoggingBehavior<,>)).As(typeof(IPipelineBehavior<,>));
             builder.RegisterGeneric(typeof(ValidatorBehavior<,>)).As(typeof(IPipelineBehavior<,>));
+            builder.RegisterGeneric(typeof(TransactionBehaviour<,>)).As(typeof(IPipelineBehavior<,>));
+
         }
     }
 }

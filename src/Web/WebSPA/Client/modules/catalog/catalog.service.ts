@@ -18,9 +18,9 @@ export class CatalogService {
   
     constructor(private service: DataService, private configurationService: ConfigurationService) {
         this.configurationService.settingsLoaded$.subscribe(x => {
-            this.catalogUrl = this.configurationService.serverSettings.purchaseUrl + '/api/v1/c/catalog/items';
-            this.brandUrl = this.configurationService.serverSettings.purchaseUrl + '/api/v1/c/catalog/catalogbrands';
-            this.typesUrl = this.configurationService.serverSettings.purchaseUrl + '/api/v1/c/catalog/catalogtypes';
+            this.catalogUrl = this.configurationService.serverSettings.purchaseUrl + '/c/api/v1/catalog/items';
+            this.brandUrl = this.configurationService.serverSettings.purchaseUrl + '/c/api/v1/catalog/catalogbrands';
+            this.typesUrl = this.configurationService.serverSettings.purchaseUrl + '/c/api/v1/catalog/catalogtypes';
         });
     }
 
@@ -38,7 +38,7 @@ export class CatalogService {
 
         return this.service.get(url)
             .pipe(
-                map((response: Response) => {
+                map((response: any) => {
                     return response;
                 })
             );
@@ -47,7 +47,7 @@ export class CatalogService {
     getBrands(): Observable<ICatalogBrand[]> {
         return this.service.get(this.brandUrl)
             .pipe(
-                map((response: Response) => {
+                map((response: any) => {
                     return response;
                 })
             );
@@ -56,7 +56,7 @@ export class CatalogService {
     getTypes(): Observable<ICatalogType[]> {
         return this.service.get(this.typesUrl)
             .pipe(
-                map((response: Response) => {
+                map((response: any) => {
                     return response;
                 })
             );
